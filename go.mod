@@ -8,11 +8,10 @@ require (
 	github.com/emvi/hide v1.1.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v8 v8.11.4
+	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/api v0.40.0
-
-	github.com/golang-jwt/jwt/v4 v4.3.0
 )
 
 require (

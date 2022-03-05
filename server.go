@@ -48,10 +48,10 @@ func (s *Server) RegisterMiddleware(middleware ...gin.HandlerFunc) {
 	s.router.RouterGroup.Use(middleware...)
 }
 
-func (s *Server) Run(log *logrus.Entry) {
+func (s *Server) Run() {
 	registerRoutes(s.handler, &s.router.RouterGroup, s.config)
 
-	log.Infof("Server listening on %v", s.config.Port)
+	s.logger.Infof("Server listening on %v", s.config.Port)
 
 	s.router.Run(":" + strconv.Itoa(s.config.Port))
 }
