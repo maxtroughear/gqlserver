@@ -8,7 +8,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
-	"github.com/maxtroughear/gqlserver/auth"
 	"github.com/maxtroughear/logrusextension"
 	"github.com/sirupsen/logrus"
 )
@@ -36,10 +35,6 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	server.handler.Use(logrusextension.LogrusExtension{
 		Logger: server.logger,
 	})
-
-	firebaseAuth := auth.NewFirebaseAuth("")
-
-	server.RegisterMiddleware(firebaseAuth.FirebaseAuthMiddleware())
 
 	return server
 }
