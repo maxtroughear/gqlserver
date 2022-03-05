@@ -24,8 +24,11 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 
 	hide.UseHash(hide.NewHashID(cfg.IDHashSalt, cfg.IDHashMinLength))
 
+	router := gin.New()
+	router.Use(gin.Recovery())
+
 	server := Server{
-		router:  gin.Default(),
+		router:  router,
 		config:  cfg,
 		handler: handler.New(es),
 		logger:  defaultLogger(cfg),
