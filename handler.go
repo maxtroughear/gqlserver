@@ -44,7 +44,9 @@ func graphqlHandler(handler *handler.Server, cfg ServerConfig) gin.HandlerFunc {
 		handler.SetQueryCache(cfg.QueryCache)
 	}
 
-	handler.Use(extension.Introspection{})
+	if cfg.PlaygroundEnabled || cfg.IntrospectionEnabled {
+		handler.Use(extension.Introspection{})
+	}
 
 	if cfg.ComplexityLimit > 0 {
 		handler.Use(&extension.ComplexityLimit{

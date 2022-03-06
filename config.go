@@ -37,6 +37,10 @@ type ServerConfig struct {
 	// Whether or not the playground is enabled
 	PlaygroundEnabled bool
 
+	// Whether or not schema introspection is enabled
+	// Introspection is enabled when Playground is enabled
+	IntrospectionEnabled bool
+
 	// Port to bind HTTP server to
 	Port int
 
@@ -64,6 +68,7 @@ var DefaultConfig = ServerConfig{
 	GraphqlPath:                 "/graphql",
 	PlaygroundPath:              "/play",
 	PlaygroundEnabled:           false,
+	IntrospectionEnabled:        false,
 	Port:                        3000,
 	LogLevel:                    logrus.InfoLevel,
 	ServiceName:                 "unnamed",
