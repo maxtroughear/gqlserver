@@ -46,6 +46,10 @@ func (s *Server) RegisterMiddleware(middleware ...gin.HandlerFunc) {
 	s.router.RouterGroup.Use(middleware...)
 }
 
+func (s *Server) RegisterExtension(extension graphql.HandlerExtension) {
+	s.handler.Use(extension)
+}
+
 func (s *Server) Run() {
 	registerRoutes(s.handler, &s.router.RouterGroup, s.config)
 
