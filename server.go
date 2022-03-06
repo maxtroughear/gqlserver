@@ -3,6 +3,7 @@ package gqlserver
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -10,6 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maxtroughear/logrusextension"
 	"github.com/sirupsen/logrus"
+	"github.com/vektah/gqlparser/v2/formatter"
+)
+
+var (
+	parsedSchema string
 )
 
 type Server struct {
@@ -34,6 +40,11 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 		logger:  defaultLogger(cfg),
 	}
 
+	s := new(strings.Builder)
+	f := formatter.NewFormatter(s)
+	f.FormatSchema(es.Schema())
+	parsedSchema = s.String()
+
 	// add logging extension
 	server.handler.Use(logrusextension.LogrusExtension{
 		Logger: server.logger,
@@ -56,6 +67,10 @@ func (s *Server) Run() {
 	s.logger.Infof("Server listening on %v", s.config.Port)
 
 	s.router.Run(":" + strconv.Itoa(s.config.Port))
+}
+
+func ParsedSchema() string {
+	return parsedSchema
 }
 
 func defaultLogger(cfg ServerConfig) *logrus.Entry {

@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/maxtroughear/logrusextension v0.0.3
 	github.com/sirupsen/logrus v1.8.1
+	github.com/vektah/gqlparser/v2 v2.4.0
 	google.golang.org/api v0.70.0
 )
 
@@ -41,7 +42,6 @@ require (
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/speps/go-hashids v2.0.0+incompatible // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
