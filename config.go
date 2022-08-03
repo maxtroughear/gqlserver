@@ -47,7 +47,7 @@ type ServerConfig struct {
 	Port int `env:"PORT"`
 
 	// Logger minimum level
-	LogLevel logrus.Level `env:"ID_HASH_MIN_LENGTH"`
+	LogLevel logrus.Level `env:"LOG_LEVEL"`
 
 	// Name of this service to report in logs
 	ServiceName string `env:"SERVICE_NAME"`
