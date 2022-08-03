@@ -264,12 +264,8 @@ github.com/matryer/moq v0.2.7/go.mod h1:kITsx543GOENm48TUAQyJ9+SAvFSr7iGQXPoth/V
 github.com/mattn/go-colorable v0.1.12/go.mod h1:u5H1YNBxpqRaxsYJYSkiCWKzEfiAb1Gb520KVy5xxl4=
 github.com/mattn/go-isatty v0.0.14 h1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
-github.com/maxtroughear/logrusextension v0.0.4 h1:egtSKQXOhBcH1lYg6SF6WdjlQu/uB7ZbqLDO/QDhddQ=
-github.com/maxtroughear/logrusextension v0.0.4/go.mod h1:rNzWtqHBIIgz76t+CZN1qVpJV7K5KyyqhfCGTDP1Nvs=
 github.com/maxtroughear/logrusnrhook v0.0.2 h1:KCziumV3DYjdaNQb03srEQh69fhQ+O1Zy3/GWr3Z9VI=
 github.com/maxtroughear/logrusnrhook v0.0.2/go.mod h1:XTxcnLLiudxbpXJ7hNdq+sTXEmLLYhcQt7Gg9ZPvCbc=
-github.com/maxtroughear/nrextension v0.0.3 h1:1faBgT8MoToItjIx1IoYFQRSVdy6XYwhpeGphfz3PmY=
-github.com/maxtroughear/nrextension v0.0.3/go.mod h1:6WiJr00LApQ3dUnToBX8Xsas9FBZFHz9m1E54/nsr9M=
 github.com/mitchellh/mapstructure v1.3.1/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=

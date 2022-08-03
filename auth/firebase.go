@@ -9,7 +9,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4/request"
-	"github.com/maxtroughear/logrusextension"
+	"github.com/maxtroughear/gqlserver/graphql/logrusextension"
 	"google.golang.org/api/option"
 )
 
@@ -40,30 +40,32 @@ func NewFirebaseAuth(credentialsFilePath string) FirebaseAuth {
 // FirebaseAuthMiddleware retrieves and verifies a Firebase auth token via
 // a header or cookie and passes the token into the current context
 func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		log := logrusextension.From(ctx.Request.Context())
+	return func(ginContext *gin.Context) {
+		ctx := ginContext.Request.Context()
 
-		client, err := a.app.Auth(ctx.Request.Context())
+		log := logrusextension.From(ctx)
+
+		client, err := a.app.Auth(ctx)
 		if err != nil {
 			log.Errorf("error getting firebase Auth client: %v", err)
-			ctx.Next()
+			ginContext.Next()
 			return
 		}
 
-		idToken, err := a.jwtExtractor.ExtractToken(ctx.Request)
+		idToken, err := a.jwtExtractor.ExtractToken(ginContext.Request)
 		if err != nil {
 			log.Debugf("failed to retrieve firebase auth token from request: %v", err)
 		}
 
-		token, err := client.VerifyIDToken(ctx.Request.Context(), idToken)
+		token, err := client.VerifyIDToken(ctx, idToken)
 		if err != nil {
 			log.Warnf("failed to verify firebase auth token: %v", err)
 		}
 
-		newCtx := context.WithValue(ctx.Request.Context(), firebaseAuthTokenContextKey{}, token)
+		newCtx := context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
 
-		ctx.Request.WithContext(newCtx)
-		ctx.Next()
+		ginContext.Request.WithContext(newCtx)
+		ginContext.Next()
 	}
 }
 
@@ -82,7 +84,10 @@ func (a *FirebaseAuth) FirebaseAuthSetUserClaims(ctx context.Context, uid string
 // FirebaseAuthTokenFromContext retrives the verified Firebase auth token
 // from the current context
 func FirebaseAuthTokenFromContext(ctx context.Context) *auth.Token {
-	token, _ := ctx.Value(firebaseAuthTokenContextKey{}).(*auth.Token)
+	token, ok := ctx.Value(firebaseAuthTokenContextKey{}).(*auth.Token)
+	if !ok {
+		return nil
+	}
 	return token
 }
 

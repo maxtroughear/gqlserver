@@ -9,9 +9,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
-	"github.com/maxtroughear/logrusextension"
+	"github.com/maxtroughear/gqlserver/extension"
+	"github.com/maxtroughear/gqlserver/graphql/logrusextension"
+	"github.com/maxtroughear/gqlserver/graphql/nrextension"
 	"github.com/maxtroughear/logrusnrhook"
-	"github.com/maxtroughear/nrextension"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/formatter"
@@ -35,6 +36,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 
 	router := gin.New()
 	router.Use(gin.Recovery())
+	router.Use(extension.GinContextToContextMiddleware())
 
 	server := Server{
 		router:  router,
@@ -65,7 +67,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 }
 
 func (s *Server) RegisterMiddleware(middleware ...gin.HandlerFunc) {
-	s.router.RouterGroup.Use(middleware...)
+	s.router.Use(middleware...)
 }
 
 func (s *Server) RegisterExtension(extension graphql.HandlerExtension) {

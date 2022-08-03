@@ -78,7 +78,7 @@ var DefaultConfig = ServerConfig{
 	IgnoreWebSocketUpgradeCheck: false,
 	ComplexityLimit:             300,
 	ApqCache:                    lru.New(100),
-	QueryCache:                  lru.New(300),
+	QueryCache:                  lru.New(1000),
 	GraphqlPath:                 "/graphql",
 	PlaygroundPath:              "/play",
 	PlaygroundEnabled:           false,
