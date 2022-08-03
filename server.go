@@ -9,9 +9,11 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
-	"github.com/maxtroughear/logrusextension"
-	"github.com/sirupsen/logrus"
+	"github.com/maxtroughear/nrextension"
+	"github.com/maxtroughear/zapgqlgen"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/vektah/gqlparser/v2/formatter"
+	"go.uber.org/zap"
 )
 
 var (
@@ -22,7 +24,7 @@ type Server struct {
 	router  *gin.Engine
 	config  ServerConfig
 	handler *handler.Server
-	logger  *logrus.Entry
+	logger  *zap.Logger
 }
 
 func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
@@ -45,9 +47,28 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	f.FormatSchema(es.Schema())
 	parsedSchema = s.String()
 
-	// add logging extension
-	server.handler.Use(logrusextension.LogrusExtension{
-		Logger: server.logger,
+	// add logging extensions
+	if cfg.NewRelic.Enabled {
+		nrApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(cfg.ServiceName),
+			newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
+			newrelic.ConfigDistributedTracerEnabled(true),
+			func(cfg *newrelic.Config) {
+				cfg.ErrorCollector.RecordPanics = true
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		server.handler.Use(nrextension.NrExtension{
+			NrApp: nrApp,
+		})
+	}
+
+	server.handler.Use(zapgqlgen.ZapExtension{
+		Logger:      server.logger,
+		UseNewRelic: cfg.NewRelic.Enabled,
 	})
 
 	return server
@@ -64,7 +85,9 @@ func (s *Server) RegisterExtension(extension graphql.HandlerExtension) {
 func (s *Server) Run() {
 	registerRoutes(s.handler, &s.router.RouterGroup, s.config)
 
-	s.logger.Infof("Server listening on %v", s.config.Port)
+	s.logger.Info("Server starting", []zap.Field{
+		zap.Int("port", s.config.Port),
+	}...)
 
 	s.router.Run(":" + strconv.Itoa(s.config.Port))
 }
@@ -73,19 +96,33 @@ func ParsedSchema() string {
 	return parsedSchema
 }
 
-func defaultLogger(cfg ServerConfig) *logrus.Entry {
-	logrus.SetOutput(os.Stdout)
+func defaultLogger(cfg ServerConfig) *zap.Logger {
 
-	logrus.SetLevel(cfg.LogLevel)
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logger, err := createLogger(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-	hostname, _ := os.Hostname()
+	hostname, err := os.Hostname()
+	if err != nil {
+		logger.Error("failed to retrieve hostname", zap.Error(err))
+		hostname = "unknown"
+	}
 
-	logger := logrus.WithFields(logrus.Fields{
-		"service":  cfg.ServiceName,
-		"env":      cfg.Environment,
-		"hostname": hostname,
-	})
+	defaultFields := []zap.Field{
+		zap.String("service", cfg.ServiceName),
+		zap.String("env", string(cfg.Environment)),
+		zap.String("hostname", hostname),
+	}
+
+	logger = logger.With(defaultFields...)
 
 	return logger
+}
+
+func createLogger(cfg ServerConfig) (*zap.Logger, error) {
+	if cfg.Environment == Dev {
+		return zap.NewDevelopment()
+	}
+	return zap.NewProduction()
 }
