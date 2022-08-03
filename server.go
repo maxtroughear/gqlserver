@@ -10,6 +10,7 @@ import (
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
 	"github.com/maxtroughear/logrusextension"
+	"github.com/maxtroughear/logrusnrhook"
 	"github.com/maxtroughear/nrextension"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
@@ -47,26 +48,15 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	f.FormatSchema(es.Schema())
 	parsedSchema = s.String()
 
-	// add logging extension
+	// add logging extensions
 	if cfg.NewRelic.Enabled {
-		nrApp, err := newrelic.NewApplication(
-			newrelic.ConfigAppName(cfg.ServiceName),
-			newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
-			newrelic.ConfigDistributedTracerEnabled(true),
-			func(cfg *newrelic.Config) {
-				cfg.ErrorCollector.RecordPanics = true
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
+		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
 
-		server.handler.Use(nrextension.NrExtension{
-			NrApp: nrApp,
+		server.RegisterExtension(nrextension.NrExtension{
+			NrApp: newNrApp(cfg),
 		})
 	}
-
-	server.handler.Use(logrusextension.LogrusExtension{
+	server.RegisterExtension(logrusextension.LogrusExtension{
 		Logger:      server.logger,
 		UseNewRelic: cfg.NewRelic.Enabled,
 	})
@@ -109,4 +99,19 @@ func defaultLogger(cfg ServerConfig) *logrus.Entry {
 	})
 
 	return logger
+}
+
+func newNrApp(cfg ServerConfig) *newrelic.Application {
+	nrApp, err := newrelic.NewApplication(
+		newrelic.ConfigAppName(cfg.ServiceName),
+		newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
+		newrelic.ConfigDistributedTracerEnabled(true),
+		func(cfg *newrelic.Config) {
+			cfg.ErrorCollector.RecordPanics = true
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+	return nrApp
 }

@@ -17,6 +17,8 @@ require (
 	google.golang.org/api v0.91.0
 )
 
+require github.com/sethgrid/pester v1.1.0 // indirect
+
 require (
 	cloud.google.com/go v0.103.0 // indirect
 	cloud.google.com/go/compute v1.7.0 // indirect
@@ -41,6 +43,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/maxtroughear/logrusnrhook v0.0.2
 	github.com/maxtroughear/nrextension v0.0.3
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

@@ -69,6 +69,9 @@ type NewRelicConfig struct {
 
 	// License key for New Relic integration
 	LicenseKey string
+
+	// Whether or not the New Relic account is in the EU region
+	EuRegion bool
 }
 
 var DefaultConfig = ServerConfig{
@@ -87,6 +90,7 @@ var DefaultConfig = ServerConfig{
 	IDHashSalt:                  "notasecret",
 	IDHashMinLength:             7,
 	NewRelic: NewRelicConfig{
-		Enabled: false,
+		Enabled:  false,
+		EuRegion: false,
 	},
 }
