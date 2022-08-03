@@ -26,7 +26,7 @@ type Server struct {
 	router  *gin.Engine
 	config  ServerConfig
 	handler *handler.Server
-	logger  *logrus.Entry
+	Logger  *logrus.Entry
 }
 
 func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
@@ -42,7 +42,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 		router:  router,
 		config:  cfg,
 		handler: handler.New(es),
-		logger:  defaultLogger(cfg),
+		Logger:  defaultLogger(cfg),
 	}
 
 	s := new(strings.Builder)
@@ -59,7 +59,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 		})
 	}
 	server.RegisterExtension(logrusextension.LogrusExtension{
-		Logger:      server.logger,
+		Logger:      server.Logger,
 		UseNewRelic: cfg.NewRelic.Enabled,
 	})
 
@@ -77,7 +77,7 @@ func (s *Server) RegisterExtension(extension graphql.HandlerExtension) {
 func (s *Server) Run() {
 	registerRoutes(s.handler, &s.router.RouterGroup, s.config)
 
-	s.logger.Infof("Server listening on %v", s.config.Port)
+	s.Logger.Infof("Server listening on %v", s.config.Port)
 
 	s.router.Run(":" + strconv.Itoa(s.config.Port))
 }
