@@ -10,6 +10,8 @@ import (
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
 	"github.com/maxtroughear/logrusextension"
+	"github.com/maxtroughear/nrextension"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/formatter"
 )
@@ -46,8 +48,27 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	parsedSchema = s.String()
 
 	// add logging extension
+	if cfg.NewRelic.Enabled {
+		nrApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(cfg.ServiceName),
+			newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
+			newrelic.ConfigDistributedTracerEnabled(true),
+			func(cfg *newrelic.Config) {
+				cfg.ErrorCollector.RecordPanics = true
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		server.handler.Use(nrextension.NrExtension{
+			NrApp: nrApp,
+		})
+	}
+
 	server.handler.Use(logrusextension.LogrusExtension{
-		Logger: server.logger,
+		Logger:      server.logger,
+		UseNewRelic: cfg.NewRelic.Enabled,
 	})
 
 	return server

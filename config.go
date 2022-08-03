@@ -6,13 +6,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Environment int
+type Environment string
 
 const (
-	Dev Environment = iota
-	Test
-	Staging
-	Prod
+	Dev     Environment = "dev"
+	Test    Environment = "test"
+	Staging Environment = "staging"
+	Prod    Environment = "prod"
 )
 
 type ServerConfig struct {
@@ -58,6 +58,17 @@ type ServerConfig struct {
 
 	// Minimum length of ID hashes
 	IDHashMinLength int
+
+	// New Relic Configuration
+	NewRelic NewRelicConfig
+}
+
+type NewRelicConfig struct {
+	// Enable New Relic integration
+	Enabled bool
+
+	// License key for New Relic integration
+	LicenseKey string
 }
 
 var DefaultConfig = ServerConfig{
@@ -75,4 +86,7 @@ var DefaultConfig = ServerConfig{
 	Environment:                 Dev,
 	IDHashSalt:                  "notasecret",
 	IDHashMinLength:             7,
+	NewRelic: NewRelicConfig{
+		Enabled: false,
+	},
 }
