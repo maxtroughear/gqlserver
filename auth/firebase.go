@@ -60,6 +60,9 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 		idToken, err := a.jwtExtractor.ExtractToken(ginContext.Request)
 		if err != nil {
 			log.Debugf("failed to retrieve firebase auth token from request: %v", err)
+			// skip if no token extracted
+			ginContext.Next()
+			return
 		}
 
 		token, err := client.VerifyIDToken(ctx, idToken)
