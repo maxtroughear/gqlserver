@@ -50,7 +50,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	router.Use(middleware.LogrusMiddleware(logger, cfg.NewRelic.Enabled))
 	if cfg.Auth.FirebaseEnabled {
 		firebaseApp := auth.NewFirebaseAuth(cfg.Auth)
-		firebaseApp.FirebaseAuthMiddleware()
+		router.Use(firebaseApp.FirebaseAuthMiddleware())
 	}
 
 	server := Server{
