@@ -9,7 +9,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4/request"
-	"github.com/maxtroughear/gqlserver/graphql/logrusextension"
+	"github.com/maxtroughear/gqlserver/graphql/gqllogrus"
 	"google.golang.org/api/option"
 )
 
@@ -20,10 +20,15 @@ type FirebaseAuth struct {
 	jwtExtractor request.Extractor
 }
 
-func NewFirebaseAuth(credentialsFilePath string) FirebaseAuth {
-	opt := option.WithCredentialsFile(credentialsFilePath)
+func NewFirebaseAuth(cfg AuthConfig) FirebaseAuth {
+	opts := []option.ClientOption{}
+	if cfg.FirebaseCredentialsFile != "" {
+		opts = append(opts, option.WithCredentialsFile(cfg.FirebaseCredentialsFile))
+	} else if cfg.FirebaseCredentialsJSON != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(cfg.FirebaseCredentialsJSON)))
+	}
 
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	app, err := firebase.NewApp(context.Background(), nil, opts...)
 	if err != nil {
 		log.Fatalf("error initialising firebase app: %v", err)
 	}
@@ -43,7 +48,7 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 	return func(ginContext *gin.Context) {
 		ctx := ginContext.Request.Context()
 
-		log := logrusextension.From(ctx)
+		log := gqllogrus.From(ctx)
 
 		client, err := a.app.Auth(ctx)
 		if err != nil {

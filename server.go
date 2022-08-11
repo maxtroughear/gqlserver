@@ -9,9 +9,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/emvi/hide"
 	"github.com/gin-gonic/gin"
-	"github.com/maxtroughear/gqlserver/extension"
-	"github.com/maxtroughear/gqlserver/graphql/logrusextension"
+	"github.com/maxtroughear/gqlserver/auth"
+	"github.com/maxtroughear/gqlserver/graphql/gqllogrus"
 	"github.com/maxtroughear/gqlserver/graphql/nrextension"
+	"github.com/maxtroughear/gqlserver/middleware"
 	"github.com/maxtroughear/logrusnrhook"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
@@ -34,15 +35,29 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 
 	hide.UseHash(hide.NewHashID(cfg.IDHashSalt, cfg.IDHashMinLength))
 
+	logger := defaultLogger(cfg)
+
 	router := gin.New()
+
+	// router middleware
 	router.Use(gin.Recovery())
-	router.Use(extension.GinContextToContextMiddleware())
+	router.Use(middleware.GinContextToContextMiddleware())
+	if cfg.NewRelic.Enabled {
+		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
+
+		router.Use(middleware.NewRelicMiddleware(newNrApp(cfg)))
+	}
+	router.Use(middleware.LogrusMiddleware(logger, cfg.NewRelic.Enabled))
+	if cfg.Auth.FirebaseEnabled {
+		firebaseApp := auth.NewFirebaseAuth(cfg.Auth)
+		firebaseApp.FirebaseAuthMiddleware()
+	}
 
 	server := Server{
 		router:  router,
 		config:  cfg,
 		handler: handler.New(es),
-		Logger:  defaultLogger(cfg),
+		Logger:  logger,
 	}
 
 	s := new(strings.Builder)
@@ -52,15 +67,10 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 
 	// add logging extensions
 	if cfg.NewRelic.Enabled {
-		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
-
-		server.RegisterExtension(nrextension.NrExtension{
-			NrApp: newNrApp(cfg),
-		})
+		server.RegisterExtension(nrextension.NrExtension{})
 	}
-	server.RegisterExtension(logrusextension.LogrusExtension{
-		Logger:      server.Logger,
-		UseNewRelic: cfg.NewRelic.Enabled,
+	server.RegisterExtension(gqllogrus.LogrusExtension{
+		Logger: server.Logger,
 	})
 
 	return server

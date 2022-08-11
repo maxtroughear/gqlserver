@@ -5,6 +5,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
+	"github.com/maxtroughear/gqlserver/auth"
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,6 +64,9 @@ type ServerConfig struct {
 
 	// New Relic Configuration
 	NewRelic NewRelicConfig
+
+	// Auth Configuration
+	Auth auth.AuthConfig
 }
 
 type NewRelicConfig struct {
@@ -94,6 +98,9 @@ var DefaultConfig = ServerConfig{
 	NewRelic: NewRelicConfig{
 		Enabled:  false,
 		EuRegion: false,
+	},
+	Auth: auth.AuthConfig{
+		FirebaseEnabled: false,
 	},
 }
 
