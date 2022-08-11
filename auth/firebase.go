@@ -9,7 +9,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4/request"
-	"github.com/maxtroughear/gqlserver/graphql/gqllogrus"
+	"github.com/maxtroughear/gqlserver/middleware"
 	"google.golang.org/api/option"
 )
 
@@ -48,7 +48,7 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 	return func(ginContext *gin.Context) {
 		ctx := ginContext.Request.Context()
 
-		log := gqllogrus.From(ctx)
+		log := middleware.LogrusFromContext(ctx)
 
 		client, err := a.app.Auth(ctx)
 		if err != nil {
