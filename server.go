@@ -136,8 +136,8 @@ func newNrApp(cfg ServerConfig) *newrelic.Application {
 func configureCorsMiddleware(cfg CorsConfig) gin.HandlerFunc {
 	corsConfig := cors.DefaultConfig()
 
-	corsConfig.AllowCredentials = true
 	corsConfig.AllowOrigins = cfg.AllowOrigins
+	corsConfig.AddAllowHeaders("Authorization")
 
 	return cors.New(corsConfig)
 }
