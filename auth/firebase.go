@@ -15,6 +15,8 @@ import (
 
 type firebaseAuthTokenContextKey struct{}
 
+type firebaseAuthContextKey struct{}
+
 type FirebaseAuth struct {
 	app          *firebase.App
 	jwtExtractor request.Extractor
@@ -43,12 +45,18 @@ func NewFirebaseAuth(cfg AuthConfig) FirebaseAuth {
 }
 
 // FirebaseAuthMiddleware retrieves and verifies a Firebase auth token via
-// a header or cookie and passes the token into the current context
+// a header or cookie and passes the token into the current context.
+// It also adds the FirebaseAuth instance to the current context
 func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 	return func(ginContext *gin.Context) {
 		ctx := ginContext.Request.Context()
 
 		log := middleware.LogrusFromContext(ctx)
+
+		{
+			newCtx := context.WithValue(ctx, firebaseAuthContextKey{}, a)
+			ginContext.Request = ginContext.Request.WithContext(newCtx)
+		}
 
 		client, err := a.app.Auth(ctx)
 		if err != nil {
@@ -70,13 +78,13 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 			log.Warnf("failed to verify firebase auth token: %v", err)
 		}
 
-		log.
-			WithField("firebase.uid", token.UID).
+		log.WithField("firebase.uid", token.UID).
 			Debugf("firebase auth token verified")
 
-		newCtx := context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
-
-		ginContext.Request = ginContext.Request.WithContext(newCtx)
+		{
+			newCtx := context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
+			ginContext.Request = ginContext.Request.WithContext(newCtx)
+		}
 		ginContext.Next()
 	}
 }
@@ -101,6 +109,15 @@ func FirebaseAuthTokenFromContext(ctx context.Context) *auth.Token {
 		return nil
 	}
 	return token
+}
+
+// FirebaseAuthFromContext retrives FirebaseAuth from the current context
+func FirebaseAuthFromContext(ctx context.Context) *FirebaseAuth {
+	firebaseAuth, ok := ctx.Value(firebaseAuthContextKey{}).(*FirebaseAuth)
+	if !ok {
+		return nil
+	}
+	return firebaseAuth
 }
 
 type cookieTokenExtractor struct{}
