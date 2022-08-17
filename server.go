@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/emvi/hide"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/maxtroughear/gqlserver/auth"
 	"github.com/maxtroughear/gqlserver/graphql/gqllogrus"
@@ -36,6 +37,9 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	hide.UseHash(hide.NewHashID(cfg.IDHashSalt, cfg.IDHashMinLength))
 
 	logger := defaultLogger(cfg)
+	if cfg.NewRelic.Enabled {
+		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
+	}
 
 	router := gin.New()
 
@@ -43,14 +47,15 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	router.Use(gin.Recovery())
 	router.Use(middleware.GinContextToContextMiddleware())
 	if cfg.NewRelic.Enabled {
-		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
-
 		router.Use(middleware.NewRelicMiddleware(newNrApp(cfg)))
 	}
 	router.Use(middleware.LogrusMiddleware(logger, cfg.NewRelic.Enabled))
 	if cfg.Auth.FirebaseEnabled {
 		firebaseApp := auth.NewFirebaseAuth(cfg.Auth)
 		router.Use(firebaseApp.FirebaseAuthMiddleware())
+	}
+	if cfg.Cors.Enabled {
+		router.Use(configureCorsMiddleware(cfg.Cors))
 	}
 
 	server := Server{
@@ -126,4 +131,13 @@ func newNrApp(cfg ServerConfig) *newrelic.Application {
 		panic(err)
 	}
 	return nrApp
+}
+
+func configureCorsMiddleware(cfg CorsConfig) gin.HandlerFunc {
+	corsConfig := cors.DefaultConfig()
+
+	corsConfig.AllowCredentials = true
+	corsConfig.AllowOrigins = cfg.AllowOrigins
+
+	return cors.New(corsConfig)
 }

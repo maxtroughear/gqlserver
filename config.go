@@ -67,6 +67,9 @@ type ServerConfig struct {
 
 	// Auth Configuration
 	Auth auth.AuthConfig
+
+	// CORS Configuration
+	Cors CorsConfig
 }
 
 type NewRelicConfig struct {
@@ -78,6 +81,13 @@ type NewRelicConfig struct {
 
 	// Whether or not the New Relic account is in the EU region
 	EuRegion bool `env:"NEW_RELIC_EU_REGION"`
+}
+
+type CorsConfig struct {
+	// Enable CORS
+	Enabled bool `env:"CORS_ENABLED"`
+
+	AllowOrigins []string `env:"CORS_ALLOW_ORIGINS"`
 }
 
 var DefaultConfig = ServerConfig{
@@ -101,6 +111,10 @@ var DefaultConfig = ServerConfig{
 	},
 	Auth: auth.AuthConfig{
 		FirebaseEnabled: false,
+	},
+	Cors: CorsConfig{
+		Enabled:      true,
+		AllowOrigins: []string{"http://localhost:3000"},
 	},
 }
 
