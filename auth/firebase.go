@@ -53,10 +53,7 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 
 		log := middleware.LogrusFromContext(ctx)
 
-		{
-			newCtx := context.WithValue(ctx, firebaseAuthContextKey{}, a)
-			ginContext.Request = ginContext.Request.WithContext(newCtx)
-		}
+		ctx = context.WithValue(ctx, firebaseAuthContextKey{}, a)
 
 		client, err := a.app.Auth(ctx)
 		if err != nil {
@@ -76,15 +73,16 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 		token, err := client.VerifyIDToken(ctx, idToken)
 		if err != nil {
 			log.Warnf("failed to verify firebase auth token: %v", err)
+			ginContext.Next()
+			return
 		}
 
 		log.WithField("firebase.uid", token.UID).
 			Debugf("firebase auth token verified")
 
-		{
-			newCtx := context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
-			ginContext.Request = ginContext.Request.WithContext(newCtx)
-		}
+		ctx = context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
+		ginContext.Request = ginContext.Request.WithContext(ctx)
+
 		ginContext.Next()
 	}
 }
