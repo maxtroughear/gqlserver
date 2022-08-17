@@ -46,6 +46,9 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	// router middleware
 	router.Use(gin.Recovery())
 	router.Use(middleware.GinContextToContextMiddleware())
+	if cfg.Cors.Enabled {
+		router.Use(configureCorsMiddleware(cfg.Cors))
+	}
 	if cfg.NewRelic.Enabled {
 		router.Use(middleware.NewRelicMiddleware(newNrApp(cfg)))
 	}
@@ -53,9 +56,6 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	if cfg.Auth.FirebaseEnabled {
 		firebaseApp := auth.NewFirebaseAuth(cfg.Auth)
 		router.Use(firebaseApp.FirebaseAuthMiddleware())
-	}
-	if cfg.Cors.Enabled {
-		router.Use(configureCorsMiddleware(cfg.Cors))
 	}
 
 	server := Server{
