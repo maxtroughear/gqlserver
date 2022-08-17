@@ -70,9 +70,13 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 			log.Warnf("failed to verify firebase auth token: %v", err)
 		}
 
+		log.
+			WithField("firebase.uid", token.UID).
+			Debugf("firebase auth token verified")
+
 		newCtx := context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
 
-		ginContext.Request.WithContext(newCtx)
+		ginContext.Request = ginContext.Request.WithContext(newCtx)
 		ginContext.Next()
 	}
 }
