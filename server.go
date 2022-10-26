@@ -126,6 +126,7 @@ func newNrApp(cfg ServerConfig) *newrelic.Application {
 		newrelic.ConfigAppName(cfg.ServiceName),
 		newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
 		newrelic.ConfigDistributedTracerEnabled(true),
+		newrelic.ConfigCodeLevelMetricsEnabled(true),
 		newrelic.ConfigAppLogForwardingEnabled(true),
 		func(cfg *newrelic.Config) {
 			cfg.ErrorCollector.RecordPanics = true
