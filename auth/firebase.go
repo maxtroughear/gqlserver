@@ -21,6 +21,7 @@ type firebaseAuthContextKey struct{}
 
 type FirebaseAuth struct {
 	app          *firebase.App
+	authClient   *auth.Client
 	jwtExtractor request.Extractor
 }
 
@@ -37,8 +38,14 @@ func NewFirebaseAuth(cfg AuthConfig) FirebaseAuth {
 		log.Fatalf("error initialising firebase app: %v", err)
 	}
 
+	authClient, err := app.Auth(context.Background())
+	if err != nil {
+		log.Fatalf("error initialising firebase auth client: %v", err)
+	}
+
 	return FirebaseAuth{
-		app: app,
+		app:        app,
+		authClient: authClient,
 		jwtExtractor: request.MultiExtractor{
 			request.AuthorizationHeaderExtractor,
 			cookieTokenExtractor{},
@@ -104,11 +111,6 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 }
 
 func authenticateUser(ctx context.Context, ginContext *gin.Context, a *FirebaseAuth) (*auth.Token, error) {
-	client, err := a.app.Auth(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	idToken, err := a.jwtExtractor.ExtractToken(ginContext.Request)
 	if err == request.ErrNoTokenInRequest {
 		return nil, nil
@@ -116,7 +118,7 @@ func authenticateUser(ctx context.Context, ginContext *gin.Context, a *FirebaseA
 		return nil, err
 	}
 
-	token, err := client.VerifyIDToken(ctx, idToken)
+	token, err := a.authClient.VerifyIDToken(ctx, idToken)
 	if err != nil {
 		return token, err
 	}
