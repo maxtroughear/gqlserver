@@ -71,10 +71,9 @@ func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 		ctx = context.WithValue(ctx, firebaseAuthContextKey{}, a)
 
 		token, err := authenticateUser(ctx, ginContext, a)
-		userAuthenticated := token != nil && err == nil
 		if err != nil {
 			log.WithError(err).Error("error while attempting to authenticate user. request continuing")
-		} else if userAuthenticated {
+		} else if token != nil {
 			log.WithFields(logrus.Fields{
 				"firebase.uid":      token.UID,
 				"firebase.issueAt":  token.IssuedAt,
