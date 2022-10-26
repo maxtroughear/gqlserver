@@ -14,7 +14,6 @@ import (
 	"github.com/maxtroughear/gqlserver/graphql/gqllogrus"
 	"github.com/maxtroughear/gqlserver/graphql/nrextension"
 	"github.com/maxtroughear/gqlserver/middleware"
-	"github.com/maxtroughear/logrusnrhook"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/formatter"
@@ -42,7 +41,7 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	if cfg.NewRelic.Enabled {
 		nrApp = newNrApp(cfg)
 
-		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
+		logrus.AddHook(NewLogrusNewrelicHook(nrApp))
 	}
 
 	router := gin.New()
@@ -127,6 +126,7 @@ func newNrApp(cfg ServerConfig) *newrelic.Application {
 		newrelic.ConfigAppName(cfg.ServiceName),
 		newrelic.ConfigLicense(cfg.NewRelic.LicenseKey),
 		newrelic.ConfigDistributedTracerEnabled(true),
+		newrelic.ConfigAppLogForwardingEnabled(true),
 		func(cfg *newrelic.Config) {
 			cfg.ErrorCollector.RecordPanics = true
 		},
