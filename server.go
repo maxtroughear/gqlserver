@@ -37,7 +37,11 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	hide.UseHash(hide.NewHashID(cfg.IDHashSalt, cfg.IDHashMinLength))
 
 	logger := defaultLogger(cfg)
+	var nrApp *newrelic.Application
+
 	if cfg.NewRelic.Enabled {
+		nrApp = newNrApp(cfg)
+
 		logrus.AddHook(logrusnrhook.NewNrHook(cfg.ServiceName, cfg.NewRelic.LicenseKey, cfg.NewRelic.EuRegion))
 	}
 
@@ -49,10 +53,10 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 	if cfg.Cors.Enabled {
 		router.Use(configureCorsMiddleware(cfg.Cors))
 	}
-	if cfg.NewRelic.Enabled {
-		router.Use(middleware.NewRelicMiddleware(newNrApp(cfg)))
+	if nrApp != nil {
+		router.Use(middleware.NewRelicMiddleware(nrApp))
 	}
-	router.Use(middleware.LogrusMiddleware(logger, cfg.NewRelic.Enabled))
+	router.Use(middleware.LogrusMiddleware(logger))
 	if cfg.Auth.FirebaseEnabled {
 		firebaseApp := auth.NewFirebaseAuth(cfg.Auth)
 		router.Use(firebaseApp.FirebaseAuthMiddleware())

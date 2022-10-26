@@ -2,6 +2,7 @@ package nrextension
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -28,12 +29,7 @@ func (n NrExtension) InterceptOperation(ctx context.Context, next graphql.Operat
 	tx := newrelic.FromContext(ctx)
 	oc := graphql.GetOperationContext(ctx)
 
-	var opName string
-	if oc.OperationName == "" {
-		opName = "UNKNOWN"
-	} else {
-		opName = oc.OperationName
-	}
+	opName := buildOperationName(oc.OperationName)
 
 	if tx != nil {
 		tx.SetName(opName)
@@ -48,7 +44,7 @@ func (n NrExtension) InterceptField(ctx context.Context, next graphql.Resolver) 
 	fc := graphql.GetFieldContext(ctx)
 
 	if fc.IsResolver && tx != nil {
-		defer tx.StartSegment(fc.Field.Name).End()
+		defer tx.StartSegment(buildResolverName(fc.Field.Name)).End()
 	}
 
 	// catch any panics and send to NR
@@ -60,4 +56,18 @@ func (n NrExtension) InterceptField(ctx context.Context, next graphql.Resolver) 
 	}()
 
 	return next(ctx)
+}
+
+func buildOperationName(graphqlOperationName string) string {
+	if graphqlOperationName == "" {
+		graphqlOperationName = "UNKNOWN"
+	}
+	return fmt.Sprintf("GraphQL/Operation/%s", graphqlOperationName)
+}
+
+func buildResolverName(graphqlFieldName string) string {
+	if graphqlFieldName == "" {
+		graphqlFieldName = "UNKNOWN"
+	}
+	return fmt.Sprintf("GraphQL/Resolver/%s", graphqlFieldName)
 }

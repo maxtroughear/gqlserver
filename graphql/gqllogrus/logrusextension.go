@@ -33,7 +33,7 @@ func (n LogrusExtension) InterceptField(ctx context.Context, next graphql.Resolv
 
 	fieldLogger := logger.WithFields(logrus.Fields{
 		"operation": oc.OperationName,
-		"field":     fc.Field.Name,
+		"resolver":  fc.Field.Name,
 	})
 
 	ctx = new(ctx, fieldLogger)

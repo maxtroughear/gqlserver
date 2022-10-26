@@ -10,7 +10,7 @@ import (
 
 type logrusContextKey struct{}
 
-func LogrusMiddleware(logger *logrus.Entry, useNewRelic bool) gin.HandlerFunc {
+func LogrusMiddleware(logger *logrus.Entry) gin.HandlerFunc {
 	return func(ginContext *gin.Context) {
 		ctx := ginContext.Request.Context()
 		ginLogger := logger.WithContext(ctx).
@@ -21,9 +21,9 @@ func LogrusMiddleware(logger *logrus.Entry, useNewRelic bool) gin.HandlerFunc {
 				"http.path":      ginContext.Request.URL.Path,
 			})
 
-		if useNewRelic {
-			nr := newrelic.FromContext(ctx)
-			metadata := nr.GetLinkingMetadata()
+		tx := newrelic.FromContext(ctx)
+		if tx != nil {
+			metadata := tx.GetLinkingMetadata()
 			ginLogger = logger.WithFields(logrus.Fields{
 				"entity.name": metadata.EntityName,
 				"entity.guid": metadata.EntityGUID,

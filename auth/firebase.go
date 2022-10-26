@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4/request"
 	"github.com/maxtroughear/gqlserver/middleware"
+	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 )
 
@@ -50,41 +52,77 @@ func NewFirebaseAuth(cfg AuthConfig) FirebaseAuth {
 func (a *FirebaseAuth) FirebaseAuthMiddleware() gin.HandlerFunc {
 	return func(ginContext *gin.Context) {
 		ctx := ginContext.Request.Context()
-
 		log := middleware.LogrusFromContext(ctx)
+
+		tx := newrelic.FromContext(ctx)
+		var segment *newrelic.Segment
+		if tx != nil {
+			segment = tx.StartSegment("Gin/Middleware/FirebaseAuth")
+		}
+
+		// always continue through middleware pipeline
+		defer func(ginContext *gin.Context, segment *newrelic.Segment) {
+			if segment != nil {
+				segment.End()
+			}
+
+		}(ginContext, segment)
 
 		ctx = context.WithValue(ctx, firebaseAuthContextKey{}, a)
 
-		client, err := a.app.Auth(ctx)
+		token, err := authenticateUser(ctx, ginContext, a)
+		userAuthenticated := token != nil && err != nil
 		if err != nil {
-			log.Errorf("error getting firebase Auth client: %v", err)
-			ginContext.Next()
-			return
+			log.WithError(err).Error("error while attempting to authenticate user. request continuing")
+		} else if userAuthenticated {
+			log.WithFields(logrus.Fields{
+				"firebase.uid":      token.UID,
+				"firebase.issueAt":  token.IssuedAt,
+				"firebase.expires":  token.Expires,
+				"firebase.authTime": token.AuthTime,
+			}).Debugf("firebase auth token verified")
+
+			if segment != nil {
+				segment.AddAttribute("firebase.uid", token.UID)
+				segment.AddAttribute("firebase.issueAt", token.IssuedAt)
+				segment.AddAttribute("firebase.expires", token.Expires)
+				segment.AddAttribute("firebase.authTime", token.AuthTime)
+			}
+
+			ctx = context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
+		} else {
+			log.Debugf("firebase auth token missing")
 		}
 
-		idToken, err := a.jwtExtractor.ExtractToken(ginContext.Request)
-		if err != nil {
-			log.Debugf("failed to retrieve firebase auth token from request: %v", err)
-			// skip if no token extracted
-			ginContext.Next()
-			return
-		}
-
-		token, err := client.VerifyIDToken(ctx, idToken)
-		if err != nil {
-			log.Warnf("failed to verify firebase auth token: %v", err)
-			ginContext.Next()
-			return
-		}
-
-		log.WithField("firebase.uid", token.UID).
-			Debugf("firebase auth token verified")
-
-		ctx = context.WithValue(ctx, firebaseAuthTokenContextKey{}, token)
 		ginContext.Request = ginContext.Request.WithContext(ctx)
+
+		if segment != nil {
+			segment.End()
+		}
 
 		ginContext.Next()
 	}
+}
+
+func authenticateUser(ctx context.Context, ginContext *gin.Context, a *FirebaseAuth) (*auth.Token, error) {
+	client, err := a.app.Auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	idToken, err := a.jwtExtractor.ExtractToken(ginContext.Request)
+	if err == request.ErrNoTokenInRequest {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	token, err := client.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return token, err
+	}
+
+	return token, nil
 }
 
 // FirebaseAuthSetUserClaims sets the user with the passed uid's token claims.
