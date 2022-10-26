@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/maxtroughear/gqlserver/middleware"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -28,6 +29,7 @@ func (n NrExtension) Validate(schema graphql.ExecutableSchema) error {
 func (n NrExtension) InterceptOperation(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
 	tx := newrelic.FromContext(ctx)
 	oc := graphql.GetOperationContext(ctx)
+	logger := middleware.LogrusFromContext(ctx)
 
 	opName := buildOperationName(oc.OperationName)
 
@@ -36,12 +38,15 @@ func (n NrExtension) InterceptOperation(ctx context.Context, next graphql.Operat
 		defer tx.StartSegment(opName).End()
 	}
 
-	return next(ctx)
+	nextResult := next(ctx)
+	logger.Warn("Operation after next")
+	return nextResult
 }
 
 func (n NrExtension) InterceptField(ctx context.Context, next graphql.Resolver) (interface{}, error) {
 	tx := newrelic.FromContext(ctx)
 	fc := graphql.GetFieldContext(ctx)
+	logger := middleware.LogrusFromContext(ctx)
 
 	if fc.IsResolver && tx != nil {
 		defer tx.StartSegment(buildResolverName(fc.Field.Name)).End()
@@ -54,6 +59,8 @@ func (n NrExtension) InterceptField(ctx context.Context, next graphql.Resolver) 
 			panic(r)
 		}
 	}()
+
+	logger.Warn("Field before next")
 
 	return next(ctx)
 }
