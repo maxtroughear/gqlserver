@@ -75,7 +75,9 @@ func NewServer(es graphql.ExecutableSchema, cfg ServerConfig) Server {
 
 	// add logging extensions
 	if cfg.NewRelic.Enabled {
-		server.RegisterExtension(nrextension.NrExtension{})
+		server.RegisterExtension(nrextension.NrExtension{
+			Config: cfg.NewRelic.GraphqlExtension,
+		})
 	}
 	server.RegisterExtension(gqllogrus.LogrusExtension{
 		Logger: server.Logger,

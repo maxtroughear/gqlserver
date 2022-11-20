@@ -11,6 +11,13 @@ import (
 type operationSegmentContextKey struct{}
 
 type NrExtension struct {
+	Config Config
+}
+
+func NewNrExtension(cfg Config) NrExtension {
+	return NrExtension{
+		Config: cfg,
+	}
 }
 
 var _ interface {
@@ -52,14 +59,23 @@ func (n NrExtension) InterceptField(ctx context.Context, next graphql.Resolver) 
 	}
 
 	// catch any panics and send to NR
-	defer func() {
-		if r := recover(); r != nil {
-			tx.NoticeError(r.(error))
-			panic(r)
-		}
-	}()
+	if n.Config.NoticeErrorOnResolverPanic {
+		defer func() {
+			if r := recover(); r != nil {
+				tx.NoticeError(r.(error))
+				panic(r)
+			}
+		}()
+	}
 
-	return next(ctx)
+	result, err := next(ctx)
+	if n.Config.NoticeErrorOnGraphQLError {
+		if err != nil {
+			tx.NoticeError(err)
+		}
+	}
+
+	return result, err
 }
 
 func (n NrExtension) InterceptResponse(ctx context.Context, next graphql.ResponseHandler) *graphql.Response {

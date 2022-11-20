@@ -6,6 +6,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
 	"github.com/maxtroughear/gqlserver/auth"
+	"github.com/maxtroughear/gqlserver/graphql/nrextension"
 	"github.com/sirupsen/logrus"
 )
 
@@ -81,6 +82,8 @@ type NewRelicConfig struct {
 
 	// Whether or not the New Relic account is in the EU region
 	EuRegion bool `env:"NEW_RELIC_EU_REGION"`
+
+	GraphqlExtension nrextension.Config
 }
 
 type CorsConfig struct {
@@ -108,6 +111,10 @@ var DefaultConfig = ServerConfig{
 	NewRelic: NewRelicConfig{
 		Enabled:  false,
 		EuRegion: false,
+		GraphqlExtension: nrextension.Config{
+			NoticeErrorOnResolverPanic: true,
+			NoticeErrorOnGraphQLError:  true,
+		},
 	},
 	Auth: auth.AuthConfig{
 		FirebaseEnabled: false,
